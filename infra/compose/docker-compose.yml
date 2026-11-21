@@ -1,0 +1,11 @@
+services:
+  ev-server:
+    build:
+      context: ../..
+      dockerfile: infra/docker/ev-server.Dockerfile
+    environment:
+      EV_HOST: 0.0.0.0
+      EV_PORT: "17878"
+      EV_SERVER_NAME: EchoVoice Server
+    ports:
+      - "17878:17878"

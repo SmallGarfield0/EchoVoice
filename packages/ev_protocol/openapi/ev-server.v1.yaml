@@ -1,0 +1,1446 @@
+openapi: 3.1.0
+info:
+  title: EchoVoice EV Server API
+  version: 0.1.0
+servers:
+  - url: http://127.0.0.1:17878
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Server is healthy
+  /api/v1/connect:
+    post:
+      summary: First connection or member login bootstrap
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectRequest"
+      responses:
+        "200":
+          description: Connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectResponse"
+  /api/v1/session/refresh:
+    post:
+      summary: Refresh a session using member id and access key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionRefreshRequest"
+      responses:
+        "200":
+          description: Refreshed session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionRefreshResponse"
+  /api/v1/profile:
+    get:
+      summary: Get the current member's canonical profile
+      security:
+        - bearerSession: []
+      responses:
+        "200":
+          description: Current member profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+    patch:
+      summary: Synchronize the current device's local profile
+      security:
+        - bearerSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileWrite"
+      responses:
+        "200":
+          description: Updated canonical member profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+  /api/v1/membership:
+    delete:
+      summary: Leave the current server
+      description: An owner must transfer ownership before leaving while other members remain.
+      security:
+        - bearerSession: []
+      responses:
+        "200":
+          description: Removed membership
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+  /api/v1/events:
+    get:
+      summary: WebSocket event stream
+      description: Authenticated development event stream for server, channel, member, role, message, voice, and RTC signaling events.
+      parameters:
+        - name: session_token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "101":
+          description: WebSocket protocol switch
+  /api/v1/server:
+    get:
+      summary: Get server summary
+      responses:
+        "200":
+          description: Server summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Server"
+    patch:
+      summary: Update server summary
+      description: Requires `edit_server_settings` permission. Server owner bypasses all permission checks.
+      security:
+        - bearerSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Server"
+      responses:
+        "200":
+          description: Updated server summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Server"
+  /api/v1/invites:
+    get:
+      summary: List server invites
+      description: Requires `create_invites` permission. Invite tokens are returned only when an invite is created.
+      security:
+        - bearerSession: []
+      responses:
+        "200":
+          description: Active and exhausted invite metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [invites]
+                properties:
+                  invites:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ServerInvite"
+    post:
+      summary: Create a server invite
+      description: Requires `create_invites` permission.
+      security:
+        - bearerSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteCreate"
+      responses:
+        "201":
+          description: Created invite, including its one-time visible token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerInvite"
+  /api/v1/invites/{invite_id}:
+    delete:
+      summary: Revoke a server invite
+      description: Requires `create_invites` permission.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: invite_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Revoked invite metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerInvite"
+  /api/v1/roles:
+    get:
+      summary: List roles
+      description: Returns `@everyone` plus custom server roles. Owner is not a role.
+      security:
+        - bearerSession: []
+      responses:
+        "200":
+          description: Role list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [roles]
+                properties:
+                  roles:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ServerRole"
+    post:
+      summary: Create custom role
+      description: Requires `manage_roles` permission. Non-owner members can create only below their highest role.
+      security:
+        - bearerSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleWrite"
+      responses:
+        "201":
+          description: Created role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerRole"
+  /api/v1/roles/{role_id}:
+    patch:
+      summary: Update role
+      description: Requires `manage_roles` permission. Non-owner members can update only roles below their highest role. `@everyone` allows permission updates for owner but keeps its system name and position.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleWrite"
+      responses:
+        "200":
+          description: Updated role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerRole"
+    delete:
+      summary: Delete custom role
+      description: Requires `manage_roles` permission. Non-owner members can delete only roles below their highest role. `@everyone` cannot be deleted.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerRole"
+  /api/v1/roles/order:
+    put:
+      summary: Atomically reorder custom roles
+      description: Requires `manage_roles`; `@everyone` is omitted and always remains at the bottom.
+      security:
+        - bearerSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [role_id]
+                    properties:
+                      role_id:
+                        type: string
+      responses:
+        "200":
+          description: Reordered roles
+  /api/v1/members:
+    get:
+      summary: List members
+      description: Requires `view_members` permission.
+      security:
+        - bearerSession: []
+      responses:
+        "200":
+          description: Member list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [members]
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Member"
+  /api/v1/members/{member_id}:
+    patch:
+      summary: Update member
+      description: Requires `manage_members` permission. Non-owner members can manage only members below their highest role.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: member_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemberWrite"
+      responses:
+        "200":
+          description: Updated member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+    delete:
+      summary: Remove member
+      description: Requires `manage_members` permission. Non-owner members can remove only members below their highest role.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: member_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Removed member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+  /api/v1/members/{member_id}/link:
+    post:
+      summary: Link a duplicate device member to the retained member
+      description: Requires `manage_members`; device credentials and member-owned records are migrated atomically.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: member_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [duplicate_member_id]
+              properties:
+                duplicate_member_id:
+                  type: string
+      responses:
+        "200":
+          description: Canonical linked member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+  /api/v1/members/{member_id}/roles:
+    patch:
+      summary: Replace member role assignments
+      description: Requires `manage_roles` permission. `@everyone` is implicit and must not be included. Non-owner members can assign only roles below their highest role.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: member_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role_ids]
+              properties:
+                role_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Updated member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+  /api/v1/channels:
+    get:
+      summary: List channels
+      description: Requires `view_channels` permission.
+      security:
+        - bearerSession: []
+      responses:
+        "200":
+          description: Channel list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [channels]
+                properties:
+                  channels:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Channel"
+    post:
+      summary: Create channel
+      description: Requires `manage_channels` permission. Voice channel chat uses the voice channel id itself; no hidden text channel is created.
+      security:
+        - bearerSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelWrite"
+      responses:
+        "201":
+          description: Created channel
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Channel"
+  /api/v1/channels/order:
+    put:
+      summary: Atomically update channel tree order
+      description: Requires `manage_channels`; every channel appears once and categories remain top-level.
+      security:
+        - bearerSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [channel_id]
+                    properties:
+                      channel_id:
+                        type: string
+                      parent_id:
+                        type: string
+      responses:
+        "200":
+          description: Reordered channel tree
+  /api/v1/channels/{channel_id}:
+    patch:
+      summary: Update channel
+      description: Requires `manage_channels` permission.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelPatch"
+      responses:
+        "200":
+          description: Updated channel
+    delete:
+      summary: Delete channel
+      description: Requires `manage_channels` permission. Deleting a category moves its children to the top level; deleting a message-capable channel also removes its messages and files.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted channel
+  /api/v1/channels/{channel_id}/messages:
+    get:
+      summary: List channel messages
+      description: Requires `view_channels` permission.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: before_ms
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Message list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [messages]
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Message"
+    post:
+      summary: Send channel message
+      description: Requires `send_messages` permission. Author id is taken from the session.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+      responses:
+        "201":
+          description: Created message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+  /api/v1/channels/{channel_id}/messages/{message_id}:
+    patch:
+      summary: Edit channel message
+      description: Requires channel `view_channels`; authors also need `send_messages`, moderators need `manage_messages`.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: message_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+      responses:
+        "200":
+          description: Updated message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+    delete:
+      summary: Delete channel message
+      description: Requires channel `view_channels`; authors can delete their own messages, moderators need `manage_messages`.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: message_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+  /api/v1/channels/{channel_id}/files:
+    get:
+      summary: List a channel file directory
+      description: Requires `view_files`, `download_files`, or `manage_files`. Content hashes are omitted unless the member can download files.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: parent_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File and directory entries under the requested parent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries]
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChannelFileEntry"
+    post:
+      summary: Create a directory, link a cached file, or upload file content
+      description: Directory creation requires `manage_files`. File creation requires `upload_files`; when the member cannot list files, the server forces the parent to the channel root. A cached sha256 creates a new entry without retransmitting bytes.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/ChannelDirectoryCreate"
+                - $ref: "#/components/schemas/ChannelCachedFileCreate"
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                parent_id:
+                  type: string
+                expected_sha256:
+                  type: string
+                  pattern: "^[a-fA-F0-9]{64}$"
+      responses:
+        "201":
+          description: Created file entry. Cached links include `X-EchoVoice-Content-Deduplicated: true`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelFileEntry"
+  /api/v1/channels/{channel_id}/files/{entry_id}:
+    get:
+      summary: Preview or download a channel file
+      description: Requires `download_files` or `manage_files`.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entry_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: disposition
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [inline]
+      responses:
+        "200":
+          description: File bytes with the stored MIME type
+    patch:
+      summary: Rename or move a channel file entry
+      description: Requires `manage_files`, or ownership of the file. File owners without list access are restricted to the channel root.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entry_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelFileUpdate"
+      responses:
+        "200":
+          description: Updated file entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelFileEntry"
+    delete:
+      summary: Delete a channel file entry
+      description: Requires `manage_files`, or ownership of the file. Deleting a directory recursively deletes its entries.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entry_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted file entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelFileEntry"
+  /api/v1/channels/{channel_id}/permission-overrides:
+    get:
+      summary: List channel permission overrides
+      description: Requires channel `manage_channels` permission.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Permission override list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [permission_overrides]
+                properties:
+                  permission_overrides:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChannelPermissionOverride"
+    post:
+      summary: Create or update channel permission override
+      description: Requires channel `manage_channels` permission.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelPermissionOverride"
+      responses:
+        "200":
+          description: Permission override saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelPermissionOverride"
+  /api/v1/channels/{channel_id}/permission-overrides/{override_id}:
+    delete:
+      summary: Delete channel permission override
+      description: Requires channel `manage_channels` permission.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: override_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Permission override deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelPermissionOverride"
+  /api/v1/voice-states:
+    get:
+      summary: List voice states
+      description: Requires `view_channels` permission. One member can have at most one active voice state.
+      security:
+        - bearerSession: []
+      responses:
+        "200":
+          description: Voice state list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [voice_states]
+                properties:
+                  voice_states:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VoiceState"
+  /api/v1/channels/{channel_id}/voice-state:
+    post:
+      summary: Join voice channel
+      description: Requires `connect_voice` permission. Joining a new voice channel replaces the member's previous voice state.
+      security:
+        - bearerSession: []
+      parameters:
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Joined voice channel
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceState"
+  /api/v1/voice-state:
+    patch:
+      summary: Update current voice state
+      description: Requires a valid session and an active voice state. Updates the caller's muted/deafened flags.
+      security:
+        - bearerSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mic_muted, audio_deafened, is_speaking]
+              properties:
+                mic_muted:
+                  type: boolean
+                audio_deafened:
+                  type: boolean
+                is_speaking:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated current voice state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceState"
+    delete:
+      summary: Leave current voice channel
+      description: Requires a valid session. The operation is idempotent for members that are not in voice.
+      security:
+        - bearerSession: []
+      responses:
+        "200":
+          description: Left current voice channel
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceState"
+components:
+  securitySchemes:
+    bearerSession:
+      type: http
+      scheme: bearer
+      bearerFormat: EV session token
+  schemas:
+    Server:
+      type: object
+      required: [server_id, name]
+      properties:
+        server_id:
+          type: string
+        name:
+          type: string
+        icon_sha256:
+          type: string
+        icon_data_url:
+          type: string
+        description:
+          type: string
+        screen_share_enabled:
+          type: boolean
+        remote_control_enabled:
+          type: boolean
+        accompaniment_enabled:
+          type: boolean
+        soundboard_enabled:
+          type: boolean
+        emoji_enabled:
+          type: boolean
+        file_storage_enabled:
+          type: boolean
+        dm_relay_enabled:
+          type: boolean
+        home_mailbox_enabled:
+          type: boolean
+        visibility:
+          type: string
+          enum: [public, private]
+        default_language:
+          type: string
+        created_at_ms:
+          type: integer
+          format: int64
+    ConnectRequest:
+      type: object
+      properties:
+        server_password:
+          type: string
+        invite_token:
+          type: string
+        profile:
+          $ref: "#/components/schemas/ProfileInput"
+    ProfileInput:
+      type: object
+      required: [display_name, local_profile_id, client_version]
+      properties:
+        display_name:
+          type: string
+        avatar_sha256:
+          type: string
+        avatar_data_url:
+          type: string
+        avatar_color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+        bio:
+          type: string
+        local_profile_id:
+          type: string
+        client_version:
+          type: string
+        profile_updated_at_ms:
+          type: integer
+          format: int64
+    ProfileWrite:
+      type: object
+      required: [display_name]
+      properties:
+        display_name:
+          type: string
+        avatar_sha256:
+          type: string
+        avatar_data_url:
+          type: string
+        avatar_color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+        bio:
+          type: string
+    ConnectResponse:
+      type: object
+      required: [server_id, member_id, session_token, is_owner]
+      properties:
+        server_id:
+          type: string
+        member_id:
+          type: string
+        access_key:
+          type: string
+        session_token:
+          type: string
+        is_owner:
+          type: boolean
+    SessionRefreshRequest:
+      type: object
+      required: [server_id, member_id, access_key]
+      properties:
+        server_id:
+          type: string
+        member_id:
+          type: string
+        access_key:
+          type: string
+    SessionRefreshResponse:
+      type: object
+      required: [server_id, member_id, session_token, is_owner]
+      properties:
+        server_id:
+          type: string
+        member_id:
+          type: string
+        session_token:
+          type: string
+        is_owner:
+          type: boolean
+    Permission:
+      type: string
+      enum:
+        - administrator
+        - view_members
+        - view_channels
+        - send_messages
+        - connect_voice
+        - speak
+        - read_message_history
+        - mute_members
+        - deafen_members
+        - move_members
+        - edit_server_settings
+        - manage_roles
+        - manage_channels
+        - manage_channel_permissions
+        - manage_members
+        - manage_messages
+        - share_screen
+        - request_remote_control
+        - accept_remote_control
+        - play_accompaniment
+        - play_soundboard
+        - manage_server_soundboard
+        - send_emoji
+        - manage_server_emoji
+        - create_invites
+        - view_files
+        - upload_files
+        - download_files
+        - manage_files
+    ServerRole:
+      type: object
+      required: [role_id, name, color, position, is_everyone, permissions]
+      properties:
+        role_id:
+          type: string
+        name:
+          type: string
+        color:
+          type: string
+        gradient_color:
+          type: string
+        icon_data_url:
+          type: string
+        display_separately:
+          type: boolean
+        member_count:
+          type: integer
+        position:
+          type: integer
+        is_everyone:
+          type: boolean
+        permissions:
+          type: object
+          additionalProperties:
+            type: boolean
+    RoleWrite:
+      type: object
+      properties:
+        name:
+          type: string
+        color:
+          type: string
+        gradient_color:
+          type: string
+        icon_data_url:
+          type: string
+        display_separately:
+          type: boolean
+        position:
+          type: integer
+        permissions:
+          type: object
+          additionalProperties:
+            type: boolean
+    Member:
+      type: object
+      required: [member_id, display_name, bio, local_profile_id, role_ids, is_owner, is_banned, last_seen_at_ms, profile_updated_at_ms, online, linked_devices]
+      properties:
+        member_id:
+          type: string
+        display_name:
+          type: string
+        avatar_sha256:
+          type: string
+        avatar_data_url:
+          type: string
+        avatar_color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+        bio:
+          type: string
+        local_profile_id:
+          type: string
+        role_ids:
+          type: array
+          items:
+            type: string
+        is_owner:
+          type: boolean
+        is_banned:
+          type: boolean
+        last_seen_at_ms:
+          type: integer
+          format: int64
+        profile_updated_at_ms:
+          type: integer
+          format: int64
+        online:
+          type: boolean
+        linked_devices:
+          type: integer
+    MemberWrite:
+      type: object
+      properties:
+        is_banned:
+          type: boolean
+    Channel:
+      type: object
+      required: [channel_id, type, name, visibility, bitrate, user_limit, permission_synced, position]
+      properties:
+        channel_id:
+          type: string
+        parent_id:
+          type: string
+        type:
+          type: string
+          enum: [category, text, voice, temporary_voice]
+        name:
+          type: string
+        topic:
+          type: string
+        visibility:
+          type: string
+          enum: [default, warning]
+        warning_text:
+          type: string
+        bitrate:
+          type: integer
+        user_limit:
+          type: integer
+        permission_synced:
+          type: boolean
+        default_language:
+          type: string
+        localizations:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ChannelLocalization"
+        effective_permissions:
+          type: object
+          description: Effective permissions for the authenticated member. Present on authenticated channel lists.
+          additionalProperties:
+            type: boolean
+        position:
+          type: integer
+    ChannelWrite:
+      type: object
+      required: [type, name]
+      properties:
+        type:
+          type: string
+          enum: [category, text, voice, temporary_voice]
+        name:
+          type: string
+        parent_id:
+          type: string
+        topic:
+          type: string
+        visibility:
+          type: string
+          enum: [default, warning]
+        warning_text:
+          type: string
+        bitrate:
+          type: integer
+        user_limit:
+          type: integer
+        permission_synced:
+          type: boolean
+        default_language:
+          type: string
+        localizations:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ChannelLocalization"
+    ChannelPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        topic:
+          type: string
+        parent_id:
+          type: string
+        position:
+          type: integer
+          minimum: 0
+        visibility:
+          type: string
+          enum: [default, warning]
+        warning_text:
+          type: string
+        bitrate:
+          type: integer
+        user_limit:
+          type: integer
+        permission_synced:
+          type: boolean
+        default_language:
+          type: string
+        localizations:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ChannelLocalization"
+    ChannelLocalization:
+      type: object
+      properties:
+        name:
+          type: string
+        topic:
+          type: string
+        warning_text:
+          type: string
+    ChannelFileEntry:
+      type: object
+      required: [entry_id, channel_id, type, name, owner_member_id, size_bytes, created_at_ms, updated_at_ms]
+      properties:
+        entry_id:
+          type: string
+        channel_id:
+          type: string
+        parent_id:
+          type: string
+        type:
+          type: string
+          enum: [directory, file]
+        name:
+          type: string
+        asset_sha256:
+          type: string
+          description: Omitted when the member can list but cannot download files.
+          pattern: "^[a-f0-9]{64}$"
+        owner_member_id:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+          minimum: 0
+        mime_type:
+          type: string
+        created_at_ms:
+          type: integer
+          format: int64
+        updated_at_ms:
+          type: integer
+          format: int64
+    ChannelDirectoryCreate:
+      type: object
+      required: [type, name]
+      properties:
+        type:
+          type: string
+          const: directory
+        name:
+          type: string
+        parent_id:
+          type: string
+    ChannelCachedFileCreate:
+      type: object
+      required: [type, name, asset_sha256, size_bytes]
+      properties:
+        type:
+          type: string
+          const: file
+        name:
+          type: string
+        parent_id:
+          type: string
+        asset_sha256:
+          type: string
+          pattern: "^[a-fA-F0-9]{64}$"
+        size_bytes:
+          type: integer
+          format: int64
+          minimum: 0
+    ChannelFileUpdate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        parent_id:
+          type: string
+    InviteCreate:
+      type: object
+      required: [max_uses]
+      properties:
+        expires_in_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 31536000
+        max_uses:
+          type: integer
+          minimum: 1
+          maximum: 1000
+    ServerInvite:
+      type: object
+      required: [invite_id, creator_member_id, expires_at_ms, max_uses, use_count, created_at_ms]
+      properties:
+        invite_id:
+          type: string
+        token:
+          type: string
+          description: Present only in the create response.
+        creator_member_id:
+          type: string
+        expires_at_ms:
+          type: integer
+          format: int64
+        max_uses:
+          type: integer
+        use_count:
+          type: integer
+        created_at_ms:
+          type: integer
+          format: int64
+    ChannelPermissionOverride:
+      type: object
+      required: [override_id, channel_id, target_type, target_id, allows, denies]
+      properties:
+        override_id:
+          type: string
+        channel_id:
+          type: string
+        target_type:
+          type: string
+          enum: [role, member]
+        target_id:
+          type: string
+        allows:
+          type: object
+          additionalProperties:
+            type: boolean
+        denies:
+          type: object
+          additionalProperties:
+            type: boolean
+    Message:
+      type: object
+      required: [message_id, channel_id, author_id, content, created_at_ms]
+      properties:
+        message_id:
+          type: string
+        channel_id:
+          type: string
+        author_id:
+          type: string
+        content:
+          type: string
+        created_at_ms:
+          type: integer
+          format: int64
+        edited_at_ms:
+          type: integer
+          format: int64
+        deleted_at_ms:
+          type: integer
+          format: int64
+    VoiceState:
+      type: object
+      required: [channel_id, member_id, joined_at_ms, mic_muted, audio_deafened, is_speaking]
+      properties:
+        channel_id:
+          type: string
+        member_id:
+          type: string
+        joined_at_ms:
+          type: integer
+          format: int64
+        mic_muted:
+          type: boolean
+        audio_deafened:
+          type: boolean
+        is_speaking:
+          type: boolean

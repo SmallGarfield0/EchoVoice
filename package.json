@@ -1,0 +1,18 @@
+{
+  "name": "echovoice",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "desktop:dev": "npm --prefix apps/desktop run dev",
+    "desktop:build": "npm --prefix apps/desktop run build",
+    "desktop:clean": "npm --prefix apps/desktop run clean:vite",
+    "server:build": "node scripts/build-ev-server.mjs",
+    "cache:prune": "node scripts/prune-build-caches.mjs --force",
+    "tauri": "cd apps/desktop && npx tauri",
+    "tauri:dev": "npm --prefix apps/desktop run tauri:dev",
+    "tauri:build": "node scripts/prune-build-caches.mjs && cd apps/desktop && npx tauri build",
+    "tauri:icons": "cd apps/desktop && npx tauri icon ../../icon.png",
+    "tauri:info": "cd apps/desktop && npx tauri info",
+    "tauri:version": "cd apps/desktop && npx tauri --version"
+  }
+}

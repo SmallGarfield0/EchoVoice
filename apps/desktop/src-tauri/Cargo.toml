@@ -1,0 +1,72 @@
+[package]
+name = "echovoice-desktop"
+version = "0.1.0"
+description = "EchoVoice desktop client"
+edition = "2021"
+rust-version = "1.87"
+
+[build-dependencies]
+tauri-build = { version = "=2.0.0", features = [] }
+
+[dependencies]
+tauri = { version = "=2.0.0", features = [] }
+tauri-runtime = "=2.0.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+image = { version = "=0.25.6", default-features = false, features = ["jpeg", "png"] }
+openh264 = "=0.9.3"
+rayon = "=1.12.0"
+yuvutils-rs = { version = "=0.8.3", features = ["rayon"] }
+webrtc = "=0.17.1"
+rtcp = "=0.17.1"
+bytes = "1"
+tokio = { version = "1.32.0", features = ["rt-multi-thread", "sync", "time"] }
+sys-voice = "=0.2.0"
+unsafe-libopus = "=0.2.0"
+nnnoiseless = { version = "=0.5.2", default-features = false }
+cpal = "=0.18.1"
+ev-core = { path = "../../../crates/ev-core" }
+ev-media = { path = "../../../crates/ev-media" }
+ev-protocol = { path = "../../../crates/ev-protocol" }
+
+[target.'cfg(windows)'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
+windows-core = "0.58"
+windows = { version = "0.58", features = [
+  "Foundation",
+  "Graphics_Capture",
+  "Graphics_DirectX",
+  "Graphics_DirectX_Direct3D11",
+  "Win32_Foundation",
+  "Win32_Graphics_Direct3D",
+  "Win32_Graphics_Direct3D11",
+  "Win32_Graphics_Gdi",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common",
+  "Win32_Media_Audio",
+  "Win32_Media_MediaFoundation",
+  "Win32_Storage_Xps",
+  "Win32_System_Com",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Performance",
+  "Win32_System_WinRT",
+  "Win32_System_WinRT_Direct3D11",
+  "Win32_System_WinRT_Graphics_Capture",
+  "Win32_System_Threading",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging"
+] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", features = ["apple-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", features = ["sync-secret-service"] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
+[dev-dependencies]
+log = "0.4"

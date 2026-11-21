@@ -1,0 +1,31 @@
+node_modules/
+dist/
+target/
+.svelte-kit/
+.tauri/
+*.db
+*.db-shm
+*.db-wal
+data/
+.env
+*.log
+services/ev-server/bin/
+services/ev-server/ev-server.yaml
+
+# Local scratch copies of files that were split or rewritten. These are working
+# material, not source; the real files live under src/.
+apps/desktop/.backup/
+# Stamp written by the local build-cache sweep; machine state, not source.
+sweep.timestamp
+
+# Private planning, business, and roadmap notes that stay out of the public
+# repository. They live in _nogit/ on purpose and are never committed.
+_nogit/
+
+# Local build and type-check caches.
+*.tsbuildinfo
+.test-cache/
+
+# Operating-system metadata.
+.DS_Store
+Thumbs.db

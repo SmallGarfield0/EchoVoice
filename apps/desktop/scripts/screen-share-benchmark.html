@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>EchoVoice screen-share test source</title>
+<style>
+  body { margin: 0; background: #171717; color: white; font: 16px system-ui }
+  form { display: flex; gap: 1rem; align-items: center; padding: 1rem; flex-wrap: wrap }
+  canvas { display: block; max-width: 100%; height: auto }
+  canvas:fullscreen { width: 100vw; height: 100vh; object-fit: contain; background: black }
+  #viewers { display: flex; flex-wrap: wrap }
+  #viewers video { width: 160px }
+  fieldset { display: flex; flex-wrap: wrap; gap: .25rem; border: 0; padding: 0 }
+  legend { color: #bbc3cc }
+  fieldset label { position: relative; padding: .25rem .45rem; border: 1px solid #5a6571; border-radius: .3rem }
+  fieldset input { position: absolute; opacity: 0; width: 1px }
+  fieldset label:has(:checked) { background: #23394a; border-color: #92cfff }
+  fieldset label:focus-within { outline: 2px solid #92cfff }
+  button, input::file-selector-button { background: #29343e; color: white; border: 1px solid #667784; border-radius: .3rem; padding: .4rem }
+</style>
+<form id="settings">
+  <fieldset id="scenes"><legend>Source</legend></fieldset>
+  <label>Recording for video or game <input id="clip" type="file" accept="video/*"></label>
+  <fieldset id="sizes"><legend>Resolution</legend></fieldset>
+  <button>Start source</button><button type="button" id="fullscreen">Fullscreen</button>
+  <output id="status"></output>
+</form>
+<canvas id="source" width="1920" height="1080"></canvas>
+<div id="viewers"></div>
+<script src="screen-share-benchmark.js"></script>
+</html>

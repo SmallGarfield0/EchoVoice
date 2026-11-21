@@ -1,0 +1,77 @@
+server:
+  name: EchoVoice Server
+  host: 0.0.0.0
+  port: 17878
+  public_url: https://voice.example.com:17878
+  password: ""
+  tls:
+    enabled: true
+    cert_file: ./certs/fullchain.pem
+    key_file: ./certs/privkey.pem
+    reload_interval_seconds: 60
+
+# EV Server can host the built Web client directly. Web hosting requires TLS.
+# Leave `root` empty to serve the client that release builds bundle inside the
+# executable, so no web/ directory is needed next to ev-server.exe.
+web:
+  enabled: true
+  root: ./web
+
+storage:
+  driver: sqlite
+  sqlite_path: ./data/echovoice.db
+  content_path: ./data/content
+  max_channel_file_mb: 512
+  max_soundboard_kb: 2048
+  max_emoji_kb: 8192
+
+media:
+  voice_enabled: true
+  screen_share_enabled: false
+  remote_control_enabled: false
+  accompaniment_enabled: false
+  soundboard_enabled: false
+
+content:
+  emoji_enabled: false
+  file_storage_enabled: false
+
+relay:
+  dm_relay_enabled: false
+  private_voice_relay_enabled: false
+  home_mailbox_enabled: false
+  max_envelope_kb: 512
+
+# Keep voice membership during short WSS interruptions caused by network
+# congestion, laptop sleep, or browser background-tab suspension.
+realtime:
+  disconnect_grace_seconds: 60
+
+# Built-in STUN/TURN makes voice and screen sharing reachable across public NATs.
+# Open the TURN port for UDP+TCP and the relay range for UDP in the firewall.
+rtc:
+  stun_urls: []
+  turn:
+    enabled: true
+    listen_host: 0.0.0.0
+    port: 3478
+    public_host: voice.example.com
+    realm: echovoice
+    relay_min_port: 49160
+    relay_max_port: 49460
+    tcp_enabled: true
+
+# One relayed participant consumes one port from the range above, so the range
+# is the server's relay capacity (default 301 concurrent allocations).
+# Open the whole range for UDP in the firewall if you raise it.
+
+# Signaling limits. The server never carries media: voice and screen sharing are
+# peer-to-peer WebRTC, so nothing here caps a viewer's bitrate. These keys only
+# bound large SDP/candidate messages and the per-connection send queue.
+websocket:
+  # 1024 = 1 MiB. Set to -1 to remove the message size limit entirely.
+  max_message_kb: 1024
+  # Events buffered per connection before new ones are dropped when a client
+  # cannot keep up. Raise these on a busy server.
+  send_queue: 1024
+  priority_queue: 2048

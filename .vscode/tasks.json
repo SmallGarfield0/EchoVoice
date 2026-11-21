@@ -1,0 +1,109 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "EchoVoice: EV Server",
+      "type": "shell",
+      "command": "go",
+      "args": [
+        "run",
+        "./cmd/ev-server"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/services/ev-server"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "showReuseMessage": true
+      }
+    },
+    {
+      "label": "EchoVoice: EV Server (Go fallback)",
+      "type": "shell",
+      "command": "D:\\Environment\\bin\\go.exe",
+      "args": [
+        "run",
+        "./cmd/ev-server"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/services/ev-server"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "showReuseMessage": true
+      }
+    },
+    {
+      "label": "EchoVoice: Web Client",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "desktop:dev"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "showReuseMessage": true
+      }
+    },
+    {
+      "label": "EchoVoice: Tauri Desktop Client",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "tauri:dev"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "showReuseMessage": true
+      }
+    },
+    {
+      "label": "EchoVoice: Dev Server + Web Client",
+      "dependsOn": [
+        "EchoVoice: EV Server",
+        "EchoVoice: Web Client"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "EchoVoice: Dev Server + Web Client (Go fallback)",
+      "dependsOn": [
+        "EchoVoice: EV Server (Go fallback)",
+        "EchoVoice: Web Client"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+members = [
+  "apps/desktop/src-tauri",
+  "crates/ev-core",
+  "crates/ev-crypto",
+  "crates/ev-media",
+  "crates/ev-net",
+  "crates/ev-protocol",
+  "crates/ev-store",
+]
+
+[workspace.package]
+edition = "2021"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/SmallGarfield0/EchoVoice"
+rust-version = "1.87"
+
+[workspace.dependencies]
+ev-core = { path = "crates/ev-core" }
+ev-crypto = { path = "crates/ev-crypto" }
+ev-media = { path = "crates/ev-media" }
+ev-net = { path = "crates/ev-net" }
+ev-protocol = { path = "crates/ev-protocol" }
+ev-store = { path = "crates/ev-store" }
+
+[profile.dev]
+opt-level = 2

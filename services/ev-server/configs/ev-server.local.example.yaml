@@ -1,0 +1,41 @@
+server:
+  name: EchoVoice Local Server
+  host: 127.0.0.1
+  port: 17878
+  public_url: http://127.0.0.1:17878
+  password: ""
+  tls:
+    enabled: false
+    cert_file: ""
+    key_file: ""
+    reload_interval_seconds: 60
+
+web:
+  enabled: false
+  root: ./web
+
+storage:
+  driver: sqlite
+  sqlite_path: ./data/echovoice.db
+  content_path: ./data/content
+  max_channel_file_mb: 512
+  max_soundboard_kb: 2048
+  max_emoji_kb: 8192
+
+relay:
+  dm_relay_enabled: false
+  private_voice_relay_enabled: false
+  home_mailbox_enabled: false
+  max_envelope_kb: 512
+
+rtc:
+  stun_urls: []
+  turn:
+    enabled: true
+    listen_host: 127.0.0.1
+    port: 3478
+    public_host: 127.0.0.1
+    realm: echovoice-local
+    relay_min_port: 49160
+    relay_max_port: 49460
+    tcp_enabled: true
