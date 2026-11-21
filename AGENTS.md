@@ -55,6 +55,20 @@ add constraints for their directory, but must not weaken these rules.
 - Do not add a fallback that silently changes requested media quality or user
   permissions. Surface the actual constraint to the user.
 
+## Commit Messages
+
+- Write every commit message in Chinese: the subject line and the body, including
+  commits authored by agents or automation. Rewrite tool-generated defaults
+  (merge, revert, squash, `--amend`) into Chinese before committing.
+- Keep the subject a short Chinese sentence, roughly 50 characters or fewer, with
+  no trailing period. A Chinese type prefix is allowed, for example `修复:`、
+  `新增:`、`文档:`、`重构:`. File names, identifiers, and English technical terms
+  such as `WebRTC` or `Tauri` stay as-is.
+- Use the body to explain why the change was made and what it affects, one bullet
+  per point, and note the tests or builds that were run.
+- Keep one logical change per commit; do not mix renames or formatting with
+  behavior changes.
+
 ## Quality Gate
 
 - Run the narrowest relevant tests while iterating, then run the affected package
